@@ -9,6 +9,7 @@ from src.storage import Storage
 router = Router(name="filters")
 
 
+# ---------- Keyboard ----------
 def kb_filters() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -21,6 +22,7 @@ def kb_filters() -> ReplyKeyboardMarkup:
     )
 
 
+# ---------- States ----------
 class AddKW(StatesGroup):
     waiting = State()
 
@@ -37,7 +39,7 @@ class UnmuteSrc(StatesGroup):
     waiting = State()
 
 
-@router.message(F.text.in_({"⚙️ Filters", "Фильтры"}))
+@router.message(F.text.casefold().in_({"⚙️ filters", "фильтры"}))
 @router.message(Command("filters"))
 async def cmd_filters(message: Message, storage: Storage, tg_channels: list[str] | None = None):
     user_id = message.from_user.id
@@ -55,7 +57,6 @@ async def cmd_filters(message: Message, storage: Storage, tg_channels: list[str]
     )
 
 
-# Commands (remain usable)
 @router.message(Command("listkw"))
 async def cmd_listkw(message: Message, storage: Storage):
     words = await storage.list_keywords(message.from_user.id)
@@ -103,27 +104,33 @@ async def cmd_muted(message: Message, storage: Storage):
     await message.answer("Muted sources: " + (", ".join(muted) if muted else "none"))
 
 
-# Buttons -> FSM
-@router.message(F.text == "➕ Add keyword")
+# ---------- Buttons (FSM) ----------
+@router.message(F.text.casefold() == "➕ add keyword")
 async def addkw_btn(message: Message, state: FSMContext):
     await state.set_state(AddKW.waiting)
     await message.answer("Send a keyword to add (or /cancel).")
 
-@router.message(F.text == "➖ Remove keyword")
+@router.message(F.text.casefold() == "➖ remove keyword")
 async def rmkw_btn(message: Message, state: FSMContext):
     await state.set_state(RmKW.waiting)
     await message.answer("Send a keyword to remove (or /cancel).")
 
-@router.message(F.text == "🚫 Mute source")
+@router.message(F.text.casefold() == "📝 list keywords")
+async def listkw_btn(message: Message, storage: Storage):
+    words = await storage.list_keywords(message.from_user.id)
+    await message.answer("Keywords: " + (", ".join(words) if words else "none"))
+
+@router.message(F.text.casefold() == "🚫 mute source")
 async def mute_btn(message: Message, state: FSMContext):
     await state.set_state(MuteSrc.waiting)
     await message.answer("Send a source to mute, e.g. tengrinews (or /cancel).")
 
-@router.message(F.text == "✅ Unmute source")
+@router.message(F.text.casefold() == "✅ unmute source")
 async def unmute_btn(message: Message, state: FSMContext):
     await state.set_state(UnmuteSrc.waiting)
     await message.answer("Send a source to unmute, e.g. tengrinews (or /cancel).")
 
+# ---------- FSM: data input ----------
 @router.message(AddKW.waiting, F.text)
 async def addkw_enter(message: Message, storage: Storage, state: FSMContext):
     kw = (message.text or "").strip().lower()
@@ -160,10 +167,8 @@ async def unmute_enter(message: Message, storage: Storage, state: FSMContext):
     await state.clear()
     await message.answer(f"Unmuted source: {src}", reply_markup=kb_filters())
 
-@router.message(AddKW.waiting, Command("cancel"))
-@router.message(RmKW.waiting, Command("cancel"))
-@router.message(MuteSrc.waiting, Command("cancel"))
-@router.message(UnmuteSrc.waiting, Command("cancel"))
+# ---------- Cancel ----------
+@router.message(Command("cancel"))
 async def cancel(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Cancelled.", reply_markup=kb_filters())

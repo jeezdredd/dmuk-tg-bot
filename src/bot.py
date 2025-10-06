@@ -5,7 +5,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.enums import ParseMode
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
 
-from config import load_config
+from src.config import load_config
 from src.storage import Storage
 from src.handlers import start as start_handlers
 from src.handlers import news as news_handlers

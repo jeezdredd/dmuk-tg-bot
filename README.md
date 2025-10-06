@@ -44,6 +44,3 @@ Handler routers in `src/handlers/` expose the conversational features:
 
 - **`utils/text.py`** – provides Markdown-to-HTML sanitization and caption clipping helpers shared by handlers
   and notification routines.
-
-Together these components deliver a modular Telegram bot that can be extended with real university data sources
-or integrated with existing student information systems.

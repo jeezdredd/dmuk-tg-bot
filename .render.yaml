@@ -1,0 +1,11 @@
+services:
+  - type: worker
+    name: dmuk-tg-bot
+    env: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python src/bot.py"
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
